@@ -1,0 +1,1 @@
+from brotherql_cli.printer.interfacing import print_from_lines
