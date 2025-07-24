@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 0) On Apple Silicon, ensure Rosetta is installed
+if [[ "$(uname -m)" == "arm64" ]]; then
+  if ! /usr/bin/pgrep oahd &>/dev/null; then
+    echo "Installing Rosetta…"
+    /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+  fi
+fi
+
+# 1) Look for a Python 3.13–3.x in PATH
+PY_CMD=""
+for cmd in python3 python; do
+  if command -v "$cmd" &>/dev/null; then
+    ver=$("$cmd" --version 2>&1 | awk '{print $2}')
+    maj=$(echo "$ver" | cut -d. -f1)
+    min=$(echo "$ver" | cut -d. -f2)
+    if [[ $maj -eq 3 && $min -ge 13 ]] && [[ $maj -lt 4 ]]; then
+      PY_CMD="$cmd"
+      break
+    fi
+  fi
+done
+
+# 2) If no suitable Python, run the bundled python pkg
+if [[ -z "$PY_CMD" ]]; then
+  echo "No Python 3.13+ found; running bundled Python installer…"
+  /usr/sbin/installer -pkg "/opt/myapp/python-3.13.5-macos11.pkg" -target /
+  PY_CMD="/usr/local/bin/python3"
+fi
+
+echo "Using Python: $($PY_CMD --version)"
+
+# 3) Ensure pip is present
+if ! "$PY_CMD" -m pip --version &>/dev/null; then
+  echo "Bootstrapping pip…"
+  "$PY_CMD" -m ensurepip --upgrade
+  "$PY_CMD" -m pip install --upgrade pip
+fi
+
+# 4) Ensure pipx is installed
+if ! command -v pipx &>/dev/null; then
+  echo "Installing pipx…"
+  "$PY_CMD" -m pip install --user pipx
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# 5) Install your wheel via pipx
+echo "Installing myapp via pipx…"
+pipx install "/opt/brotherql-cli/brotherql_cli-1.0.0-py3-none-any.whl" --force
+
+echo "brotherql-cli has been succesfully installed!"
+exit 0
