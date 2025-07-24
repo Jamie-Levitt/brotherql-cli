@@ -1,7 +1,10 @@
+from brotherql_cli.appconfig import load_config
+
+import typer
+from rich import print
+
 from zeroconf import Zeroconf, ServiceBrowser
 import time
-
-from brotherql_cli.config import load_config
 
 def __broad_search(timeout=5) -> str | None:
     printer = None
@@ -27,27 +30,31 @@ def __broad_search(timeout=5) -> str | None:
     zeroconf.close()
     return printer
 
-def find_ip() -> str:
-    attempts = load_config()["search_attempts"]
-    for i in range(attempts):
-        print(f"[DEBUG] Scanning for active printer IP, attempt [{i}] of [{attempts}]")
+def find_ip(informative:bool=False) -> str:
+    attempts = load_config()["ATTEMPTS"]
+    for i in range(attempts-1):
+        if informative:
+            print(f"[gold1 b][IP SCAN][/gold1 b] Searching for active printer, attempt [yellow b]{i+1}[/yellow b] of [magenta b]{attempts}[/magenta b]")
         ip = __broad_search()
         if ip:
-            print(f"[DEBUG] Active printer IP found")
             return ip
     raise Exception(f"Printer can't be found, [{attempts}] attempts have been made")
 
-import socket
-import ipaddress
+import os
+import re
 
-def ip_in_local_subnet(target_ip:str) -> bool:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    local_network_address = s.getsockname()[0]
-    s.close()
-
-    return ipaddress.ip_address(target_ip) in ipaddress.ip_network(local_network_address)
-
+def ip_in_local_subnet(target_ip:str, attempts=4) -> bool:
+    response = os.popen(f"ping -c {attempts} {target_ip}").read()
+    recieved = re.findall(
+        r"[0-4](?= packets received)",
+        response,
+        re.MULTILINE
+    )
+    if len(recieved) !=0 and int(recieved[0]) != 0:
+        return True
+    else:
+        return False
+        
 __all__ = [
     "find_ip",
     "ip_in_local_subnet"
