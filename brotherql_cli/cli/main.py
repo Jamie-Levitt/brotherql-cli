@@ -1,6 +1,6 @@
 import typer
-from brotherql_cli.cli.exceptionhandle import ErrorHandlerTyper
-app = typer.Typer(cls=ErrorHandlerTyper,pretty_exceptions_enable=False)
+
+app = typer.Typer(no_args_is_help=True, invoke_without_command=True)
 
 from brotherql_cli.cli.config import config_app
 app.add_typer(config_app, name="config")
@@ -8,11 +8,12 @@ app.add_typer(config_app, name="config")
 from brotherql_cli.cli.print import print_app
 app.add_typer(print_app)
 
-@app.callback()
-def callback():
+@config_app.callback(invoke_without_command=True)
+def default(ctx: typer.Context):
     """
     brotherql-cli for printing labels with Brother QL label printer
     """
+    typer.echo(ctx.get_help())
 
 __all__ = [
     "app"

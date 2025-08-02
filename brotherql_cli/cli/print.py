@@ -1,8 +1,6 @@
 from brotherql_cli.cli.exceptionhandle import ErrorHandlerTyper, PrintException
 from brotherql_cli.printer import print_from_lines
 
-from typing import List
-
 import typer
 print_app = typer.Typer(cls=ErrorHandlerTyper, pretty_exceptions_enable=False)
 

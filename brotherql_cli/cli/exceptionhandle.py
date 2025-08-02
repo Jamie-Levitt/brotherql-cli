@@ -25,7 +25,7 @@ class ErrorHandlerTyper(TyperGroup):
     def invoke(self, ctx:click.Context) -> Any:
         try:
             return super().invoke(ctx)
-        except Exception as e:\
+        except Exception as e:
             # Walk to the last traceback frame
             tb = e.__traceback__
             while tb.tb_next: # type: ignore
